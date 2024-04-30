@@ -1,5 +1,53 @@
 \subsection{Интерполяционные полиномы}
 
+\subsubsection{Линейная интерполяция}
+\label{sec:simplex_linear_interp}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.8\linewidth]{geom_interp.pdf}
+\caption{Порядок нумерации точек одномерного, двумерного и трёхмерного симплекса при линейной интерполяции}
+\label{fig:geom_interp}
+\end{figure}
+Пусть функция $u$ задана в узлах симплекса, имеющего нумерацию согласно рис.~\ref{fig:geom_interp}.
+Необходимо найти значение этой функции в точке $\vec \xi$ (эта точка вообще говоря не обязана лежать внутри симлекса).
+
+Интерполяция в одномерном, двумерном и трёхмерном виде запишется как
+\begin{align}
+\label{eq:simplex_interp_1d}
+&u(\xi) =
+\frac{
+|\triangle_{\xi a}|u(b)+
+|\triangle_{b \xi}|u(a)
+}
+{|\triangle_{ba}|}
+\\[10pt]
+\label{eq:simplex_interp_2d}
+&u(\xi) =
+\frac{
+|\triangle_{ab\xi}|u(c) +
+|\triangle_{bc\xi}|u(a) +
+|\triangle_{ca\xi}|u(b)
+}
+{|\triangle_{abc}|}
+\\[10pt]
+\label{eq:simplex_interp_3d}
+&u(\xi) =
+\frac{
+|\triangle_{abc\xi}|u(d) +
+|\triangle_{cbd\xi}|u(a) +
+|\triangle_{cda\xi}|u(b) +
+|\triangle_{adb\xi}|u(c)
+}
+{|\triangle_{abcd}|},
+\end{align}
+где $|\triangle|$ -- знаковый объём симплекса, вычисляемый как
+\begin{align*}
+& |\triangle_{ab}| = b - a, \\[10pt]
+& |\triangle_{abc}| = \left(\frac{(\vec b - \vec a)\times(\vec c - \vec a)}{2}\right)_z, \\[10pt]
+& |\triangle_{abcd}| = \frac{(\vec b - \vec a)\cdot\left((\vec c - \vec a)\times(\vec d - \vec a)\right)}{6}.\\[10pt]
+\end{align*}
+
 \subsubsection{Многочлен Лагранжа}
 
 \subsubsubsection{Узловые базисные функции}

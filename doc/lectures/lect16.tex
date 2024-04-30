@@ -36,17 +36,7 @@ f_{ij}^a = f_{ji}^a = \begin{cases}
 \end{cases},
 \qquad f^a_{ii} = -\sum\limits_{i\neq j} f^a_{ij}.
 \end{equation}
-$F(r)$ -- функция-ограничитель.
-\begin{equation}
-F(r) = \left\{
-\begin{array}{ll}
-0 & - upwind\\
-1 & - symmetric \\
-\max(0, \min(r, 1)) & - minmod\\
-\max(0, \min(2, r), \min(1, 2 r))   & - superbee
-\end{array}
-\right.
-\end{equation}
+$F(r)$ -- функция-ограничитель \cref{eq:tvd_limiter}.
 
 \subsection{Задание для самостоятельной работы}
 В тестовом примере \cvar{[transport2-fem-upwind-explicit]}

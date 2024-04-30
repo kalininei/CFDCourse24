@@ -5,6 +5,7 @@ set (SRC
 	geom_test.cpp
 	poisson_solve_test.cpp
 	transport_solve_test.cpp
+	transport_fvm_solve_test.cpp
 	transport_fem_solve_test.cpp
 	cavern_2d_simple_test.cpp
 	cavern_2d_fvm_simple_test.cpp
