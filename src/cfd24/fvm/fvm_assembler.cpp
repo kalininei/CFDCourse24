@@ -76,8 +76,29 @@ std::vector<size_t> FvmExtendedCollocations::tab_colloc_colloc(size_t icolloc) c
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// Cell gradient
+// Cell gradient Least squares
 ///////////////////////////////////////////////////////////////////////////////
+
+std::vector<Vector> IFvmCellGradient::compute(const std::vector<double>& u) const{
+	std::vector<double> x = _data[0].mult_vec(u);
+	std::vector<double> y = _data[1].mult_vec(u);
+
+	std::vector<Vector> ret(x.size());
+	for (size_t i=0; i<ret.size(); ++i){
+		ret[i].x() = x[i];
+		ret[i].y() = y[i];
+	}
+
+	if (_data[2].n_rows() > 0){
+		std::vector<double> z = _data[2].mult_vec(u);
+		for (size_t i=0; i<ret.size(); ++i){
+			ret[i].z() = z[i];
+		}
+	}
+
+	return ret;
+}
+
 
 namespace{
 
@@ -131,27 +152,71 @@ std::array<CsrMatrix, 3> assemble_fvm_cell_gradient(const IGrid& grid, const Fvm
 
 }
 
-FvmCellGradient::FvmCellGradient(const IGrid& grid, const FvmExtendedCollocations& colloc)
-	: _data(assemble_fvm_cell_gradient(grid, colloc)){}
+FvmCellGradient_LeastSquares::FvmCellGradient_LeastSquares(const IGrid& grid, const FvmExtendedCollocations& colloc)
+	: IFvmCellGradient(assemble_fvm_cell_gradient(grid, colloc)){}
 
-std::vector<Vector> FvmCellGradient::compute(const std::vector<double>& u) const{
-	std::vector<double> x = _data[0].mult_vec(u);
-	std::vector<double> y = _data[1].mult_vec(u);
+///////////////////////////////////////////////////////////////////////////////
+// FvmCellGradient_Gauss
+///////////////////////////////////////////////////////////////////////////////
 
-	std::vector<Vector> ret(x.size());
-	for (size_t i=0; i<ret.size(); ++i){
-		ret[i].x() = x[i];
-		ret[i].y() = y[i];
-	}
+namespace {
 
-	if (_data[2].n_rows() > 0){
-		std::vector<double> z = _data[2].mult_vec(u);
-		for (size_t i=0; i<ret.size(); ++i){
-			ret[i].z() = z[i];
+std::array<CsrMatrix, 3> assemble_fvm_cell_gradient_gauss(const IGrid& grid, const FvmExtendedCollocations& colloc){
+	LodMatrix grad_x(grid.n_cells());
+	LodMatrix grad_y(grid.n_cells());
+	LodMatrix grad_z(grid.n_cells());
+
+	for (size_t iface=0; iface < grid.n_faces(); ++iface){
+		auto icollocs = colloc.tab_face_colloc(iface);
+		Vector n = grid.face_area(iface) * grid.face_normal(iface);
+		// ---- internal face
+		if (icollocs[0] < grid.n_cells() && icollocs[1] < grid.n_cells()){
+			const auto& icells = icollocs;
+			double vol1 = grid.cell_volume(icells[0]);
+			double vol2 = grid.cell_volume(icells[1]);
+			// left cell
+			grad_x.add_value(icells[0], icells[0], n.x()*0.5/vol1);
+			grad_y.add_value(icells[0], icells[0], n.y()*0.5/vol1);
+			grad_z.add_value(icells[0], icells[0], n.z()*0.5/vol1);
+			grad_x.add_value(icells[0], icells[1], n.x()*0.5/vol1);
+			grad_y.add_value(icells[0], icells[1], n.y()*0.5/vol1);
+			grad_z.add_value(icells[0], icells[1], n.z()*0.5/vol1);
+			// right cell
+			grad_x.add_value(icells[1], icells[0], -n.x()*0.5/vol2);
+			grad_y.add_value(icells[1], icells[0], -n.y()*0.5/vol2);
+			grad_z.add_value(icells[1], icells[0], -n.z()*0.5/vol2);
+			grad_x.add_value(icells[1], icells[1], -n.x()*0.5/vol2);
+			grad_y.add_value(icells[1], icells[1], -n.y()*0.5/vol2);
+			grad_z.add_value(icells[1], icells[1], -n.z()*0.5/vol2);
+		}
+		// boundary face (no right cell)
+		else if (icollocs[1] >= grid.n_cells()){
+			double vol1 = grid.cell_volume(icollocs[0]);
+			grad_x.add_value(icollocs[0], icollocs[1], n.x()/vol1);
+			grad_y.add_value(icollocs[0], icollocs[1], n.y()/vol1);
+			grad_z.add_value(icollocs[0], icollocs[1], n.z()/vol1);
+		// boundary face (no left cell)
+		} else {
+			double vol2 = grid.cell_volume(icollocs[1]);
+			grad_x.add_value(icollocs[1], icollocs[0], -n.x()/vol2);
+			grad_y.add_value(icollocs[1], icollocs[0], -n.y()/vol2);
+			grad_z.add_value(icollocs[1], icollocs[0], -n.z()/vol2);
 		}
 	}
-
+	std::array<CsrMatrix, 3> ret;
+	ret[0] = grad_x.to_csr();
+	ret[1] = grad_y.to_csr();
+	if (grid.dim() > 2){
+		ret[2] = grad_z.to_csr();
+	}
 	return ret;
+}
+
+};
+
+FvmCellGradient_Gauss::FvmCellGradient_Gauss(const IGrid& grid, const FvmExtendedCollocations& colloc)
+	: IFvmCellGradient(assemble_fvm_cell_gradient_gauss(grid, colloc)){
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////

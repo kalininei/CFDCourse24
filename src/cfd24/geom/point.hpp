@@ -1,7 +1,8 @@
-#ifndef CFD24_GEOM_POINT_HPP
-#define CFD24_GEOM_POINT_HPP
+#ifndef CFD_GEOM_POINT_HPP
+#define CFD_GEOM_POINT_HPP
 
 #include <array>
+#include <ostream>
 #include <cmath>
 
 namespace cfd{
@@ -78,6 +79,11 @@ public:
 		return p;
 	}
 
+
+	friend std::ostream& operator<<(std::ostream& os, const Point& p){
+		os << "(" << p.x() << ", " << p.y() << ", " << p.z() << ")";
+		return os;
+	}
 };
 
 

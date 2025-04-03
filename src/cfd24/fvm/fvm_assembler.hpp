@@ -41,12 +41,22 @@ private:
 // FvmCellGradient
 ///////////////////////////////////////////////////////////////////////////////
 
-struct FvmCellGradient{
-	FvmCellGradient(const IGrid& grid, const FvmExtendedCollocations& colloc);
-
+struct IFvmCellGradient{
+	virtual ~IFvmCellGradient() = default;
 	std::vector<Vector> compute(const std::vector<double>& u) const;
+protected:
+	IFvmCellGradient(std::array<CsrMatrix, 3>&& data): _data(std::move(data)) {};
 private:
 	std::array<CsrMatrix, 3> _data;
+};
+
+struct FvmCellGradient_LeastSquares: public IFvmCellGradient{
+	FvmCellGradient_LeastSquares(const IGrid& grid, const FvmExtendedCollocations& colloc);
+
+};
+
+struct FvmCellGradient_Gauss: public IFvmCellGradient{
+	FvmCellGradient_Gauss(const IGrid& grid, const FvmExtendedCollocations& colloc);
 };
 
 ///////////////////////////////////////////////////////////////////////////////

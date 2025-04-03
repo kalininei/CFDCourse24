@@ -35,7 +35,7 @@ private:
 	const double _time_step;
 	const FvmExtendedCollocations _collocations;
 	const FvmFacesDn _dfdn_computer;
-	const FvmCellGradient _grad_computer;
+	const FvmCellGradient_LeastSquares _grad_computer;
 
 	struct BoundaryInfo{
 		std::vector<size_t> all;

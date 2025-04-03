@@ -31,7 +31,7 @@ private:
 	const double _alpha_p;
 	const FvmExtendedCollocations _collocations;
 	const FvmFacesDn _dfdn_computer;
-	const FvmCellGradient _grad_computer;
+	const FvmCellGradient_LeastSquares _grad_computer;
 	FvmDpDnComputer2D _dpdn_computer;
 
 	struct BoundaryInfo{

@@ -22,6 +22,7 @@ set (SRC
 	poisson_hermite_solve_test.cpp
 	interp_test.cpp
 	convdiff_fem_test.cpp
+	cavity_fvm_rans_test.cpp
 
 	utils/filesystem.cpp
 	utils/vecmat.cpp
