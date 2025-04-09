@@ -1,0 +1,85 @@
+\section{Лекция 21 (05.04.25)}
+
+\subsection{$k-\epsilon$ модель турбулентности}
+
+Постановка задачи для определения турбулентной вязкости $\nu_T$ имеет вид
+\begin{equation}
+\dfr{k}{t} + \nabla\cdot(\vec u k) - \nabla \cdot \left(\nu + \frac{\nu_T}{\sigma_k}\right)\nabla k = G - \epsilon
+\end{equation}
+
+\begin{equation}
+\dfr{\epsilon}{t} + \nabla\cdot(\vec u \epsilon) - \nabla \cdot \left(\nu + \frac{\nu_T}{\sigma_\epsilon}\right)\nabla \epsilon = 
+	C_1 G \frac{\epsilon}{k} - C_2 \frac{\epsilon^2}{k}
+\end{equation}
+
+\begin{equation}
+G = 2 \nu_T {\rm dev} \vec E : \nabla\vec u = \nu_T \sum_{i,j}\left(\dfr{u_i}{x_j} + \dfr{u_j}{x_i}\right)\dfr{u_i}{x_j}
+\end{equation}
+
+\begin{equation}
+\nu = \frac{1}\Ren, \qquad \nu_T = C_\mu\frac{k^2}{\epsilon}, \qquad \nu_{eff} = \nu + \nu_T.
+\end{equation}
+
+\begin{equation*}
+C_\mu = 0.09, \quad \sigma_k = 1.0, \quad \sigma_\epsilon = 1.3, \quad C_1 = 1.44, \quad C_2 = 1.92
+\end{equation*}
+
+Граничные условия:
+\begin{equation}
+x\in\partial\Omega: \dfr{k}{n} = 0
+\end{equation}
+
+Для приграничных ячеек
+\begin{equation}
+i \in bnd: \epsilon_i = \begin{cases}
+\dfrac{C_\mu^{3/4} k^{3/2}}{\kappa y}, &\quad y^+ > 11.25, \\[10pt]
+\dfrac{2 \nu k}{y^2},                   &\quad y^+ < 11.25.
+\end{cases}
+\end{equation}
+где $\kappa=0.41$, $y$ -- расстояние от границы, а $y^+$:
+\begin{equation*}
+y^+ = \frac{y u_\tau}{\nu}, \quad u_\tau = \sqrt{C_\mu^{1/2}k},
+\end{equation*}
+
+Решать систему в таком виде нельзя из-за проблем с делением на ноль при вычислении правой части уравнения для диссипации $\epsilon$ и вычислении турбулентной вязкости $\nu_T$.
+Поэтому переформулируем задачу, вводя переменную $\gamma = k/\epsilon$:
+
+\begin{align*}
+&\dfr{k}{t} + \nabla\cdot(\vec u k) - \nabla \cdot \left(\nu + \frac{\nu_T}{\sigma_k}\right)\nabla k + \gamma k = G, \\
+&\dfr{\epsilon}{t} + \nabla\cdot(\vec u \epsilon) - \nabla \cdot \left(\nu + \frac{\nu_T}{\sigma_\epsilon}\right)\nabla \epsilon + C_2 \epsilon = 
+	C_1 G \gamma.
+\end{align*}
+Для вычисления турбулентной вязкости введём минимум как долю $\delta_\nu$ от кинематической вязкости: $\min(\nu_T) = \delta_\nu \nu$,
+а также текущую длину смешения $l^* = \max(1, C_\mu k ^{3/2} \epsilon^{-1})$.
+Тогда турбулентную вязкость будем определять как
+\begin{equation*}
+\nu_T = \max(\delta_\nu \nu, l^* \sqrt k)
+\end{equation*}
+а переменную $\gamma$ для избегания деления на ноль в виде:
+\begin{equation*}
+\gamma = C_\mu \frac{k}{\nu_T}.
+\end{equation*}
+
+
+\subsubsection{Задание для самостоятельной работы}
+В тесте \ename{[cavity-fvm-rans-ke]} из файла \ename{[cavity_fvm_rans_test.cpp]}
+реализована SIMPLE схема решения задачи о стационарном течении в каверне
+по турбулентной модели $k-\epsilon$. При для некоторых методов (помеченных комментарием \cvar{TODO})
+стоит фиктивная реализация.
+Необходимо
+\begin{itemize}
+\item Реализовать все эти методы;
+\item Отрисовать итоговые поля, характеризующие скорость течения и его турбулентные характеристики;
+\item Провести анализ как константы модели влияют на уровень турбулентности в каверне. Уровень турбулентности
+      считать как
+\begin{equation*}
+S = \int\limits_\Omega k \, d\vec x.
+\end{equation*}
+\end{itemize}
+
+Рекомендации:
+\begin{itemize}
+\item Значения вязкости на внутренних гранях считать как полусумму вязкостей в соседних ячейках;
+\item Для вычисления тензора скоростей деформации $\vec E$ необходимо вычислить $\dfr{u_i}{x_j}$.
+Для этого нужно воспользоваться методом \cvar{_grad_computer.compute} для обеих компонент скорости (примеры работы с этой функцией можно найти в других методах).
+\end{itemize}
