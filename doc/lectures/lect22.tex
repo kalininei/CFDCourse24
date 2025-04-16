@@ -1,0 +1,76 @@
+\section{Лекция 22 (12.04.25)}
+
+\subsection{$k-\omega$ модель турбулентности}
+
+Введём параметр удельной диссипации кинетической энергии
+\begin{equation}
+\label{eq:turb_omega}
+\omega = \frac{\epsilon}{C_\mu k}.
+\end{equation}
+
+Замыкающую модель турбулентности в терминах $k-\omega$ запишем согласно (Wilcox, 1988):
+\begin{align}
+\label{eq:komega}
+&\dfr{k}{t} + \nabla\cdot(\vec u k) - \nabla \cdot \left(\nu + \frac{\nu_T}{\sigma_k}\right)\nabla k = G - C_\mu \omega k, \\
+&\dfr{\omega}{t} + \nabla\cdot(\vec u \omega) - \nabla \cdot \left(\nu + \frac{\nu_T}{\sigma_\omega}\right)\nabla \epsilon = 
+	\frac{\gamma G}{\nu_T} - \beta \omega^2
+\end{align}
+
+\begin{equation}
+G = 2 \nu_T {\rm dev} \vec E : \nabla\vec u = \nu_T \sum_{i,j}\left(\dfr{u_i}{x_j} + \dfr{u_j}{x_i}\right)\dfr{u_i}{x_j}
+\end{equation}
+
+\begin{equation}
+\nu = \frac{1}\Ren, \qquad \nu_T = \frac{k}{\omega}, \qquad \nu_{eff} = \nu + \nu_T.
+\end{equation}
+
+\begin{equation*}
+C_\mu = 0.09, \quad \sigma_k = 2.0, \quad \sigma_\omega = 2.0, \quad \beta = \frac{3}{40}, \quad  \gamma = \frac59
+\end{equation*}
+
+Граничные условия:
+\begin{equation}
+x\in\partial\Omega: \dfr{k}{n} = 0
+\end{equation}
+
+Для приграничных ячеек
+\begin{equation}
+i \in bnd: \omega_i = \begin{cases}
+\dfrac{C_\mu^{-1/4} k^{1/2}}{\kappa y}, &\quad y^+ > 11.25, \\[10pt]
+\dfrac{6 \nu}{\beta y^2},               &\quad y^+ < 11.25.
+\end{cases}
+\end{equation}
+где $\kappa=0.41$, $y$ -- расстояние от границы, а $y^+$:
+\begin{equation*}
+y^+ = \frac{y u_\tau}{\nu}, \quad u_\tau = \sqrt{C_\mu^{1/2}k},
+\end{equation*}
+
+По аналогии с програмной реализацией модели $k-\epsilon$ диссипативные слагаемые (слагаемые с отрицательным знаком) из
+правых частей уравнений \cref{eq:komega} следует перенести в левую часть. Линеаризация этого слагаемого осуществляется
+за счёт использования множителя $\omega$ с предыдущей итерации.
+Для избегания деления на ноль
+вихревую вязкость будем вычислять по формуле \cref{eq:nut_nozerodiv},
+где длина смешения выразиться как $l^* = \min(1, k ^{1/2} \omega^{-1})$.
+
+\subsubsection{Задание для самостоятельной работы}
+Провести ту же работу, что и при анализе модели $k-\omega$.
+В тесте \ename{[cavity-fvm-rans-ko]} из файла \ename{[cavity_fvm_rans_test.cpp]}
+реализована SIMPLE схема решения задачи о стационарном течении в каверне
+по турбулентной модели $k-\omega$.
+При для некоторых методов (помеченных комментарием \cvar{TODO})
+стоит фиктивная реализация.
+Необходимо
+\begin{itemize}
+\item Реализовать все эти методы;
+\item Отрисовать итоговые поля, характеризующие скорость течения и его турбулентные характеристики;
+\item Провести анализ как константы модели влияют на уровень турбулентности в каверне. Уровень турбулентности
+      считать как
+\begin{equation*}
+S = \int\limits_\Omega k \, d\vec x.
+\end{equation*}
+\item Кроме того следует сравнить решения, полученные для этой задачи
+с решением для $k-\epsilon$ модели.
+Энергию $k$ сравнивать напрямую,
+а диссипацию -- путём приведения к единому виду ($\epsilon$ или $\omega$) 
+по формуле \cref{eq:turb_omega}.
+\end{itemize}

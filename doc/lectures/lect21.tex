@@ -46,15 +46,16 @@ y^+ = \frac{y u_\tau}{\nu}, \quad u_\tau = \sqrt{C_\mu^{1/2}k},
 
 \begin{align*}
 &\dfr{k}{t} + \nabla\cdot(\vec u k) - \nabla \cdot \left(\nu + \frac{\nu_T}{\sigma_k}\right)\nabla k + \gamma k = G, \\
-&\dfr{\epsilon}{t} + \nabla\cdot(\vec u \epsilon) - \nabla \cdot \left(\nu + \frac{\nu_T}{\sigma_\epsilon}\right)\nabla \epsilon + C_2 \epsilon = 
+&\dfr{\epsilon}{t} + \nabla\cdot(\vec u \epsilon) - \nabla \cdot \left(\nu + \frac{\nu_T}{\sigma_\epsilon}\right)\nabla \epsilon + C_2 \gamma \epsilon = 
 	C_1 G \gamma.
 \end{align*}
 Для вычисления турбулентной вязкости введём минимум как долю $\delta_\nu$ от кинематической вязкости: $\min(\nu_T) = \delta_\nu \nu$,
-а также текущую длину смешения $l^* = \max(1, C_\mu k ^{3/2} \epsilon^{-1})$.
+а также текущую длину смешения $l^* = \min(1, C_\mu k ^{3/2} \epsilon^{-1})$.
 Тогда турбулентную вязкость будем определять как
-\begin{equation*}
+\begin{equation}
+\label{eq:nut_nozerodiv}
 \nu_T = \max(\delta_\nu \nu, l^* \sqrt k)
-\end{equation*}
+\end{equation}
 а переменную $\gamma$ для избегания деления на ноль в виде:
 \begin{equation*}
 \gamma = C_\mu \frac{k}{\nu_T}.
