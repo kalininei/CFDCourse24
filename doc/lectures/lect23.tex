@@ -1,0 +1,18 @@
+\section{Лекция 23 (19.04.25)}
+
+\subsection{Модель турбулентности Спаларта--Алмараса}
+
+\subsection{Постановка задачи о естественной конвекции}
+Определяющая система уравнений в приближении Буссинеска.
+Сила тяжести направлена вертикально вниз.
+\begin{equation}
+\label{eq:natural_convection_y}
+\begin{aligned}
+& \dfr{u}{t} + \vec u\cdot\nabla u = \frac{1}{\Ren} \nabla^2 u - \dfr{p}{x}, \\
+& \dfr{v}{t} + \vec u\cdot\nabla v = \frac{1}{\Ren} \nabla^2 v - \dfr{p}{y} + T, \\
+& \nabla \cdot \vec u = 0, \\
+& \dfr{T}{t} + \vec u\cdot\nabla T = \frac{1}{\Pen} \nabla^2 T
+\end{aligned}
+\end{equation}
+Характерная скорость определена как
+$u_0 = \sqrt{gL(T_1 - T_0) \beta}$, где $\beta$ -- коэффициент сжимаемости, $g$ -- ускорение свободного падения, $L$ -- характерный масштаб длины, $T_0, T_1$ -- максимальная и минимальная температуры.

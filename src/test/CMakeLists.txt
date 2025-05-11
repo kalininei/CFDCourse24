@@ -23,6 +23,7 @@ set (SRC
 	interp_test.cpp
 	convdiff_fem_test.cpp
 	cavity_fvm_rans_test.cpp
+	convection_fvm_les_test.cpp
 
 	utils/filesystem.cpp
 	utils/vecmat.cpp
