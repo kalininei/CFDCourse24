@@ -3,6 +3,7 @@
 #include "cfd24/grid/regular_grid2d.hpp"
 #include "cfd24/grid/unstructured_grid2d.hpp"
 #include "cfd24/grid/vtk.hpp"
+#include "cfd24/grid/grid_partition.hpp"
 #include "utils/filesystem.hpp"
 
 using namespace cfd;
@@ -116,4 +117,109 @@ TEST_CASE("UnstructuredGrid2d, read from vtk", "[unstructured2-vtk]"){
 TEST_CASE("Load grid from windows build", "[unstructured2-win]"){
 	auto grid = UnstructuredGrid2D::vtk_read(test_directory_file("pebigrid_from_win.vtk"));
 	CHECK(grid.n_cells() == 1022);
+}
+
+TEST_CASE("Grid partition, 2d", "[grid-partition-2d]"){
+	std::string grid_fn = test_directory_file("tetragrid_500.vtk");
+	auto grid = std::make_shared<UnstructuredGrid2D>(UnstructuredGrid2D::vtk_read(grid_fn));
+	{
+		// no buffer, no ghost
+		GridPartition gridpart = GridPartition::build_uniform<2>(grid, {2, 1}, 0, 0);
+		CHECK(gridpart.n_domains() == 2);
+		std::shared_ptr<SubGrid> sgrid0 = gridpart.subgrid(0);
+		std::shared_ptr<SubGrid> sgrid1 = gridpart.subgrid(1);
+
+		CHECK(grid->n_cells() == 498);
+		CHECK(sgrid0->n_cells() == 252);
+		CHECK(sgrid1->n_cells() == 246);
+
+		CHECK(grid->n_points() == 472);
+		CHECK(sgrid0->n_points() == 252);
+		CHECK(sgrid1->n_points() == 246);
+	}
+	{
+		// no buffer, with ghost
+		GridPartition gridpart = GridPartition::build_uniform<2>(grid, {1, 2}, 0, 1);
+		std::shared_ptr<SubGrid> sgrid0 = gridpart.subgrid(0);
+		std::shared_ptr<SubGrid> sgrid1 = gridpart.subgrid(1);
+
+		CHECK(grid->n_cells() == 498);
+		CHECK(sgrid0->n_cells() == 283);
+		CHECK(sgrid1->n_cells() == 278);
+
+		CHECK(grid->n_points() == 472);
+		CHECK(sgrid0->n_points() == 283);
+		CHECK(sgrid1->n_points() == 278);
+
+		CHECK(sgrid0->to_global_cell(77) == 154);
+		CHECK(sgrid0->to_global_cell(254) == 16);
+		CHECK(sgrid1->to_global_cell(165) == 344);
+		CHECK(sgrid1->to_global_cell(274) == 326);
+
+		CHECK(grid->face_center(sgrid0->to_global_face(189)) == sgrid0->face_center(189));
+		CHECK(grid->face_center(sgrid1->to_global_face(78)) == sgrid1->face_center(78));
+		size_t dcf0 = sgrid0->domain_connection_faces()[3];
+		size_t dcf = sgrid0->to_global_face(dcf0);
+		CHECK((sgrid0->tab_face_cell(dcf0)[0] == INVALID_INDEX || sgrid0->tab_face_cell(dcf0)[1] == INVALID_INDEX));
+		CHECK((grid->tab_face_cell(dcf)[0] != INVALID_INDEX && grid->tab_face_cell(dcf)[1] != INVALID_INDEX));
+
+		std::vector<double> r0 = gridpart.restriction_weights(0, GridPartition::Restriction::UNITY);
+		std::vector<double> r1 = gridpart.restriction_weights(0, GridPartition::Restriction::AVERAGE);
+
+		CHECK(r0[89] == 1.0);
+		CHECK(r0[257] == 0.0);
+		CHECK(r1[89] == 1.0);
+		CHECK(r1[257] == 0.0);
+	}
+
+	{
+		// buffer=2, whith ghosts
+		GridPartition gridpart = GridPartition::build_uniform<2>(grid, {1, 2}, 2, 1);
+		std::shared_ptr<SubGrid> sgrid0 = gridpart.subgrid(0);
+		std::shared_ptr<SubGrid> sgrid1 = gridpart.subgrid(1);
+
+		std::vector<double> r0 = gridpart.restriction_weights(0, GridPartition::Restriction::UNITY);
+		std::vector<double> r1 = gridpart.restriction_weights(0, GridPartition::Restriction::AVERAGE);
+
+		CHECK(r0[343] == 0.0);
+		CHECK(r0[306] == 1.0);
+		CHECK(r0[142] == 1.0);
+		CHECK(r0[110] == 1.0);
+
+		CHECK(r1[343] == 0.0);
+		CHECK(r1[306] == 0.5);
+		CHECK(r1[142] == 0.5);
+		CHECK(r1[110] == 1.0);
+
+
+		grid->save_vtk("g.vtk");
+		sgrid0->save_vtk("g0.vtk");
+		sgrid1->save_vtk("g1.vtk");
+		VtkUtils::add_cell_data(r0, "unity_restrict", "g0.vtk");
+		VtkUtils::add_cell_data(r1, "average_restrict", "g0.vtk");
+	}
+	{
+		// 2x2 with buffer and ghosts
+		GridPartition gridpart = GridPartition::build_uniform<2>(grid, {2, 2}, 2, 1);
+		std::shared_ptr<SubGrid> sgrid0 = gridpart.subgrid(0);
+		std::shared_ptr<SubGrid> sgrid1 = gridpart.subgrid(1);
+		std::shared_ptr<SubGrid> sgrid2 = gridpart.subgrid(2);
+		std::shared_ptr<SubGrid> sgrid3 = gridpart.subgrid(3);
+		std::vector<double> r1 = gridpart.restriction_weights(0, GridPartition::Restriction::AVERAGE);
+
+		sgrid0->save_vtk("g0.vtk");
+		VtkUtils::add_cell_data(r1, "average_restrict", "g0.vtk");
+		std::vector<double> bli(sgrid0->n_cells());
+		for (size_t i=0; i<sgrid0->n_cells(); ++i){
+			bli[i] = (double)sgrid0->buffer_layer_index(i);
+		}
+		VtkUtils::add_cell_data(bli, "bli", "g0.vtk");
+
+		CHECK(r1[189] == 1.0/4.0);
+		CHECK(r1[182] == 1.0/3.0);
+		CHECK(r1[149] == 1.0/2.0);
+		CHECK(r1[202] == 0.0);
+		CHECK(r1[87] == 1.0);
+	}
+
 }

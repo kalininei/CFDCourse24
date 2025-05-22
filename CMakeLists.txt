@@ -11,6 +11,7 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/catchorg/Catch2.git
   GIT_TAG        v2.13.10
 )
+
 FetchContent_GetProperties(catch)
 if(NOT catch_POPULATED)
   FetchContent_Populate(catch)
@@ -45,6 +46,12 @@ if(NOT ghc_POPULATED)
 	FetchContent_Populate(ghc)
 endif()
 include_directories(${ghc_SOURCE_DIR}/include)
+
+# -------- mpi
+option(MPI_TESTS "Enable MPI tests" OFF)
+if (MPI_TESTS)
+	find_package(MPI REQUIRED)
+endif()
 
 
 # build all binaries to build/bin

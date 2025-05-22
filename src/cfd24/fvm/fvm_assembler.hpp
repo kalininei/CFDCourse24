@@ -12,7 +12,7 @@ namespace cfd{
 
 struct FvmExtendedCollocations{
 public:
-	FvmExtendedCollocations(const IGrid& grid);
+	FvmExtendedCollocations(const IGrid& grid, const std::vector<size_t>& ignored_bnd_faces={});
 
 	std::vector<Point> points;
 	std::vector<size_t> cell_collocations;

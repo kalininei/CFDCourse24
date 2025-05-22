@@ -10,7 +10,9 @@ using namespace cfd;
 // FvmExtendedCollocations
 ///////////////////////////////////////////////////////////////////////////////
 
-FvmExtendedCollocations::FvmExtendedCollocations(const IGrid& grid){
+FvmExtendedCollocations::FvmExtendedCollocations(const IGrid& grid, const std::vector<size_t>& ignored_bnd_faces){
+	std::set<size_t> ignored_bnd_faces_set(ignored_bnd_faces.begin(), ignored_bnd_faces.end());
+
 	// cell loop
 	for (size_t icell=0; icell<grid.n_cells(); ++icell){
 		// collocations at the cell center
@@ -26,6 +28,7 @@ FvmExtendedCollocations::FvmExtendedCollocations(const IGrid& grid){
 		_tab_face_colloc.push_back({cells[0], cells[1]});
 
 		// collocations at the boundary faces
+		if (ignored_bnd_faces_set.find(iface) == ignored_bnd_faces_set.end())
 		if (cells[0] == INVALID_INDEX || cells[1] == INVALID_INDEX){
 			points.push_back(grid.face_center(iface));
 			face_collocations.push_back(points.size()-1);
@@ -42,8 +45,10 @@ FvmExtendedCollocations::FvmExtendedCollocations(const IGrid& grid){
 	// collocations connectivity
 	_tab_colloc_colloc.resize(points.size());
 	for (const std::array<size_t, 2>& fc: _tab_face_colloc){
-		_tab_colloc_colloc[fc[1]].push_back(fc[0]);
-		_tab_colloc_colloc[fc[0]].push_back(fc[1]);
+		if (fc[0] != INVALID_INDEX && fc[1] != INVALID_INDEX){
+			_tab_colloc_colloc[fc[1]].push_back(fc[0]);
+			_tab_colloc_colloc[fc[0]].push_back(fc[1]);
+		}
 	}
 }
 

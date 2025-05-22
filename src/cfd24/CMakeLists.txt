@@ -15,6 +15,7 @@ set (SRC
 	grid/grid1d.cpp
 	grid/regular_grid2d.cpp
 	grid/unstructured_grid2d.cpp
+	grid/grid_partition.cpp
 
 	numeric_integration/quadrature.cpp
 	numeric_integration/segment_quadrature.cpp
