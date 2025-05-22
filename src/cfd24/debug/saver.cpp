@@ -105,6 +105,9 @@ size_t save_extended_colloc(const IGrid& grid){
 
 }
 
+void cfd::dbg::save_grid(const IGrid& grid){
+	grid.save_vtk(dbg_vtk_filename);
+}
 
 void cfd::dbg::save_point_data(const IGrid& grid, const std::vector<double>& data){
 	grid.save_vtk(dbg_vtk_filename);

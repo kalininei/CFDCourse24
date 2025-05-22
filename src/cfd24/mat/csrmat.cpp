@@ -142,6 +142,9 @@ double CsrMatrix::mult_vec(size_t irow, const std::vector<double>& u) const{
 	size_t start = a.at(irow);
 	size_t end = a.at(irow+1);
 	for (size_t i=start; i<end; ++i){
+		if (i >= v.size() || i >= c.size() || c[i] >= u.size()){
+			throw std::runtime_error("BAD");
+		}
 		ret += v[i] * u[c[i]];
 	}
 	return ret;

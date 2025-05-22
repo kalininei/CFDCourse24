@@ -360,10 +360,8 @@ TEST_CASE("Poisson-fvm, DDM", "[poisson2-fvm-ddm]"){
 	std::vector<double> global_u(grid->n_cells(), 0);
 	GridPartition gridpart = GridPartition::build_uniform<2>(grid, {1, 2}, 2, 1);
 	std::vector<std::shared_ptr<SubGrid>> local_grid;
-	std::vector<std::vector<double>> local_u;
 	for (size_t idom=0; idom<gridpart.n_domains(); ++idom){
 		local_grid.push_back(gridpart.subgrid(idom));
-		local_u.emplace_back(local_grid.back()->n_cells(), 0);
 	}
 
 	// restriction functions
@@ -375,11 +373,13 @@ TEST_CASE("Poisson-fvm, DDM", "[poisson2-fvm-ddm]"){
 	// assemble subproblems
 	std::vector<CsrMatrix> local_mat;
 	std::vector<std::vector<double>> local_rhs;
+	std::vector<std::vector<double>> local_u;
 	std::vector<std::shared_ptr<AmgcMatrixSolver>> local_solver;
 	for (size_t idom=0; idom < gridpart.n_domains(); ++idom){
 		TestPoissonFvmSubAssembler wrk(*gridpart.subgrid(idom));
 		local_mat.push_back(wrk.assemble_lhs());
 		local_rhs.push_back(wrk.assemble_rhs());
+		local_u.emplace_back(local_rhs.back().size(), 0);
 		local_solver.emplace_back(new AmgcMatrixSolver());
 		local_solver.back()->set_matrix(local_mat.back());
 	}
@@ -411,8 +411,8 @@ TEST_CASE("Poisson-fvm, DDM", "[poisson2-fvm-ddm]"){
 			std::fill(global_u.begin(), global_u.end(), 0.0);
 			for (size_t idom2=0; idom2 < gridpart.n_domains(); ++idom2){
 				// Xi * u
-				std::vector<double> xi_u(local_u[idom2]);
-				for (size_t i=0; i<xi_u.size(); ++i) xi_u[i] *= local_Xi[idom2][i];
+				std::vector<double> xi_u(local_grid[idom2]->n_cells());
+				for (size_t i=0; i<xi_u.size(); ++i) xi_u[i] = local_u[idom2][i] * local_Xi[idom2][i];
 
 				// E(Xi * u)
 				std::vector<double> local_u_expanded = local_grid[idom2]->expand_cell_vector(xi_u);

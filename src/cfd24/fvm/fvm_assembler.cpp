@@ -261,6 +261,22 @@ LodMatrix assemble_faces_dudn_2d(const IGrid& grid, const FvmExtendedCollocation
 				}
 			}
 		}
+		if (ret == INVALID_INDEX){
+			for (size_t icolloc1: tab_point_colloc[grid_point]){
+				for (size_t icolloc: colloc.tab_colloc_colloc(icolloc1)){
+					if (icolloc != excl0 && icolloc != excl1){
+						double meas = vector_meas(p0 - colloc.points[icolloc]);
+						if (meas < min_meas){
+							min_meas = meas;
+							ret = icolloc;
+						}
+					}
+				}
+			}
+		}
+		if (ret == INVALID_INDEX){
+			throw std::runtime_error("Failed to find closest collocation to the given point");
+		}
 		return ret;
 	};
 
@@ -294,6 +310,9 @@ LodMatrix assemble_faces_dudn_2d(const IGrid& grid, const FvmExtendedCollocation
 		Vector normal = grid.face_normal(iface);
 		size_t negative_collocation = colloc.tab_face_colloc(iface)[0];
 		size_t positive_collocation = colloc.tab_face_colloc(iface)[1];
+		if (negative_collocation == INVALID_INDEX || positive_collocation == INVALID_INDEX){
+			continue;
+		}
 		Point ci = colloc.points[negative_collocation];
 		Point cj = colloc.points[positive_collocation];
 	
