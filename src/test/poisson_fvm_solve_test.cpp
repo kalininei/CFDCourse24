@@ -256,6 +256,8 @@ TEST_CASE("Poisson-fvm 2D solver, skewgrid", "[poisson2-fvm-skew]"){
 // DDM
 ///////////////////////////////////////////////////////////////////////////////
 
+
+
 namespace {
 
 struct TestPoissonFvmSubAssembler{
@@ -351,6 +353,7 @@ TEST_CASE("Poisson-fvm, DDM", "[poisson2-fvm-ddm]"){
 	std::string grid_fn = test_directory_file("trigrid_500.vtk");
 	auto grid = std::make_shared<UnstructuredGrid2D>(UnstructuredGrid2D::vtk_read(grid_fn));
 	
+	
 	// find solution of the full problem
 	TestPoisson2SkewFvmWorker full_worker(*grid);
 	full_worker.solve();
@@ -380,7 +383,7 @@ TEST_CASE("Poisson-fvm, DDM", "[poisson2-fvm-ddm]"){
 		local_mat.push_back(wrk.assemble_lhs());
 		local_rhs.push_back(wrk.assemble_rhs());
 		local_u.emplace_back(local_rhs.back().size(), 0);
-		local_solver.emplace_back(new AmgcMatrixSolver());
+		local_solver.emplace_back(new AmgcMatrixSolver(1000, 1e-15));
 		local_solver.back()->set_matrix(local_mat.back());
 	}
 

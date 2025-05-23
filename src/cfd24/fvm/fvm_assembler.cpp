@@ -249,38 +249,42 @@ LodMatrix assemble_faces_dudn_2d(const IGrid& grid, const FvmExtendedCollocation
 		}
 	}
 	auto find_closest_collocation = [&](size_t grid_point, size_t excl0, size_t excl1){
-		size_t ret = INVALID_INDEX;
+		std::vector<size_t> ret;
 		double min_meas = 1e100;
 		Point p0 = grid.point(grid_point);
 		for (size_t icolloc: tab_point_colloc[grid_point]){
 			if (icolloc != excl0 && icolloc != excl1){
 				double meas = vector_meas(p0 - colloc.points[icolloc]);
-				if (meas < min_meas){
+				if (std::abs(meas - min_meas) < 1e-12){
+					ret.push_back(icolloc);
+				} else if (meas < min_meas){
 					min_meas = meas;
-					ret = icolloc;
+					ret = {icolloc};
 				}
 			}
 		}
-		if (ret == INVALID_INDEX){
+		if (ret.empty()){
 			for (size_t icolloc1: tab_point_colloc[grid_point]){
 				for (size_t icolloc: colloc.tab_colloc_colloc(icolloc1)){
 					if (icolloc != excl0 && icolloc != excl1){
 						double meas = vector_meas(p0 - colloc.points[icolloc]);
-						if (meas < min_meas){
+						if (std::abs(meas - min_meas) < 1e-12){
+							ret.push_back(icolloc);
+						} else if (meas < min_meas){
 							min_meas = meas;
-							ret = icolloc;
+							ret = {icolloc};
 						}
 					}
 				}
 			}
 		}
-		if (ret == INVALID_INDEX){
+		if (ret.empty()){
 			throw std::runtime_error("Failed to find closest collocation to the given point");
 		}
 		return ret;
 	};
 
-	auto add_ds_entry = [&](const Vector& normal, const Vector& c, size_t col0, size_t col1, size_t col2, size_t iface){
+	auto add_ds_entry = [&](double w, const Vector& normal, const Vector& c, size_t col0, size_t col1, size_t col2, size_t iface){
 		Vector s(-normal.y(), normal.x());
 		double cos_cos = dot_product(c, s) / dot_product(c, normal);
 
@@ -289,7 +293,7 @@ LodMatrix assemble_faces_dudn_2d(const IGrid& grid, const FvmExtendedCollocation
 		Point p2 = colloc.points[col2];
 		double tri_area = triangle_area(p0, p1, p2);
 
-		double coef = -0.5*cos_cos/tri_area;
+		double coef = -w * 0.5*cos_cos/tri_area;
 
 		double x0 = p0.x(); double y0 = p0.y();
 		double x1 = p1.x(); double y1 = p1.y();
@@ -326,14 +330,20 @@ LodMatrix assemble_faces_dudn_2d(const IGrid& grid, const FvmExtendedCollocation
 		{
 			// left point
 			size_t igrid = grid.tab_face_point(iface)[0];
-			size_t col1 = find_closest_collocation(igrid, positive_collocation, negative_collocation);
-			add_ds_entry(normal, c, negative_collocation, col1, positive_collocation, iface);
+			std::vector<size_t> col1 = find_closest_collocation(igrid, positive_collocation, negative_collocation);
+			double w = 1.0 / col1.size();
+			for (size_t c1: col1){
+				add_ds_entry(w, normal, c, negative_collocation, c1, positive_collocation, iface);
+			}
 		}
 		{
 			// right point
 			size_t igrid = grid.tab_face_point(iface)[1];
-			size_t col1 = find_closest_collocation(igrid, positive_collocation, negative_collocation);
-			add_ds_entry(normal, c, positive_collocation, col1, negative_collocation, iface);
+			std::vector<size_t> col1 = find_closest_collocation(igrid, positive_collocation, negative_collocation);
+			double w = 1.0 / col1.size();
+			for (size_t c1: col1){
+				add_ds_entry(w, normal, c, positive_collocation, c1, negative_collocation, iface);
+			}
 		}
 	}
 

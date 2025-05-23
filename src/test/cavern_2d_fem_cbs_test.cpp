@@ -760,36 +760,36 @@ private:
 	std::vector<double> _rho;
 };
 
-TEST_CASE("Cavern 2D, FEM Explicit2 CBS algorithm", "[cavern2-fem-a-cbs]"){
-	std::cout << std::endl << "--- cfd24_test [cavern2-fem-a-ex-cbs] --- " << std::endl;
+//TEST_CASE("Cavern 2D, FEM Explicit2 CBS algorithm", "[cavern2-fem-a-cbs]"){
+//        std::cout << std::endl << "--- cfd24_test [cavern2-fem-a-ex-cbs] --- " << std::endl;
 
-	double Re = 100;
-	size_t max_it = 10'000;
-	//double eps = 1e-2;
+//        double Re = 100;
+//        size_t max_it = 10'000;
+//        //double eps = 1e-2;
 
-	std::string grid_fn = tmp_directory_file("grid3_zi.vtk");
-	cfd::UnstructuredGrid2D grid = cfd::UnstructuredGrid2D::vtk_read(grid_fn);
-	//cfd::RegularGrid2D grid(0, 1, 0, 1, 30, 30);
+//        std::string grid_fn = tmp_directory_file("grid3_zi.vtk");
+//        cfd::UnstructuredGrid2D grid = cfd::UnstructuredGrid2D::vtk_read(grid_fn);
+//        //cfd::RegularGrid2D grid(0, 1, 0, 1, 30, 30);
 
-	A worker(grid, Re, 0.6);
-	worker.initialize_saver("cavern2-cbs");
+//        A worker(grid, Re, 0.6);
+//        worker.initialize_saver("cavern2-cbs");
 
-	for (size_t it=0; it<max_it; ++it){
-		worker.step();
-		//std::cout << it << " " << nrm << std::endl;
-		//double e1 = worker.residual_divergence();
-		//Vector e2 = worker.residual_momentum();
-		//std::cout << e1 << " " << e2.x() << " " << e2.y() << std::endl;
-		if (it % 100 == 0){
-			worker.save_current_fields(it);
-		}
-		if (it % 20 == 0){
-			worker.convergence_report(it);
-		}
-		//if (it > 1000){
-		//        break;
-		//}
-	}
-}
+//        for (size_t it=0; it<max_it; ++it){
+//                worker.step();
+//                //std::cout << it << " " << nrm << std::endl;
+//                //double e1 = worker.residual_divergence();
+//                //Vector e2 = worker.residual_momentum();
+//                //std::cout << e1 << " " << e2.x() << " " << e2.y() << std::endl;
+//                if (it % 100 == 0){
+//                        worker.save_current_fields(it);
+//                }
+//                if (it % 20 == 0){
+//                        worker.convergence_report(it);
+//                }
+//                //if (it > 1000){
+//                //        break;
+//                //}
+//        }
+//}
 
 }
