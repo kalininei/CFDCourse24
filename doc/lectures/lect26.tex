@@ -1,0 +1,222 @@
+\section{Лекция 26 (24.05.25)}
+
+\subsection{DDM как предобуславливатель}
+Итерационный процесс, представленный в п.~\ref{sec:ddm_schwarz},
+может быть представлен как простой итерационный процесс с предобуславливателем.
+Запишем поставновку задачи \cref{eq:schwarz_pois} в операторном виде:
+\begin{equation}
+\label{eq:schwarz_full_oper}
+\mat{A} u = f.
+\end{equation}
+Тогда простой итерационный процесс с предобуславливанием запишется в виде
+\begin{equation}
+\label{eq:schwarz_simple_it}
+u^{n+1} = u^{n} + \matinv{M} r^{n}, \qquad r^n = f - \mat{A}u^n.
+\end{equation}
+Для метода Шварца предобуславливатель будет иметь вид
+\begin{equation}
+\label{eq:schwarz_m_ras}
+\matinv{M}_{RAS} = \sum_i \mat R^T_i \mat D_i \left( \mat R_i \matinv{A} \mat R_i^T \right) \mat R_i,
+\end{equation}
+где $\mat R_i$ -- оператор сужения, делающий из оператора, действующего на всю область расчёта, оператор, действующий только на домен $\Omega_i$.
+Соответственно, $\mat R^T_i$ -- оператор продолжения, делающий из локального оператора глобальный (возвращая ноль вне целевого домена $\Omega_i$).
+Последний оператор аналогичен функции $E_i$ из уравнения \cref{eq:schwarz_un}.
+Оператор $\mat D_i$ обеспечивает взвешивание локальных операторов и функций в зонах перекрытия (аналогичен весовому множителю $\Chi_i$ из \cref{eq:schwarz_un}).
+
+Явная сборка оператора \cref{eq:schwarz_m_ras} трудоёмка, к тому же требует обращения исходного оператора $\mat A$.
+Однако на практике, собирать этот оператор не требуется. Достаточно лишь уметь применять его к невязке: то
+есть уметь решать локальные задачи в каждом из доменов \cref{eq:schwarz_rprob}.
+
+\subsubsection{Итерационный процесс BiCGStab с предобуславливателем}
+
+Инициализация
+\begin{enumerate}
+\item есть начальное приближение $u^0$
+\item вычисляем невязку
+$$r_0 = f - \mat A u_0$$
+\item предобуславливаем невязку
+$$r_0' = \matinv{M}r_0$$
+\item запоминаем начальную невязку
+$$\tilde r = r_0'$$
+\item инициализируем
+$$p_0' = r_0'$$
+\end{enumerate}
+
+Далее на $k$-ой итерации
+
+\begin{enumerate}
+\item проецируем текущую невязку на начальную
+$$\rho_k = \tilde r^T \cdot r'_{k-1}$$
+\item коэффициент $\beta$:
+$$\beta_k = \frac{\rho_k}{\rho_{k-1}} \frac{\alpha_{k-1}}{\omega_{k-1}}$$
+\item Обновляем направление
+$$p'_k = r'_{k-1} + \beta_k \left( p'_{k-1} - \omega_{k-1} v'_{k-1} \right)$$
+\item
+$$v_k'=\matinv{M}\mat A p_k'$$
+\item коэффициент $\alpha$
+$$\alpha_k = \frac{\rho_k}{\tilde r^T \cdot v'_k}$$
+\item Промежуточный вектор $s$:
+$$s'_k =  r'_{k-1} - \alpha_k v'_k$$
+\item Промежуточный вектор $t$
+$$t'_k = \matinv{M}\mat{A}s_k'$$
+\item множитель $\omega$
+$$\omega_k = \frac{ (t_k')^T \cdot s'_k} { (t_k')^T \cdot t_k' }.$$
+\item обновляем невязку и решение
+\begin{equation}
+\label{eq:schwarz_bicgstab}
+\begin{aligned}
+& x_k = x_{k-1} + \alpha_k p'_k + \omega_k s'_k, \\
+& r'_k = s'_k - \omega_k t'_k
+\end{aligned}
+\end{equation}
+\end{enumerate}
+
+Как видим, для реализации этого итерационного процесса нам необходимо уметь
+применять оператор $\mat A$ к вектору направления и оператор, обратный к предобуславливателю $\matinv M$ к невязке.
+Если мы в качестве предобуславливателя используем DDM, то ни глобального оператора, ни, тем более, обращенного предобуславливателя, у нас нет.
+Тем не менее, действие этих операторов можно реализовать и без их явного наличия.
+
+Так, применение глобального оператора $\mat A$ к глобальному вектору $x$ идентично
+действию сумме локальных отражений $\mat A_i = \mat R_i \mat A \mat R_i^T$ к локальному вектору $x_i = \mat R_i x$
+после обмена граничными условиями между векторами $x_i$ (то есть после заполнения фиктивных (ghost) ячеек данными с соседних доменов).
+
+Применение $\matinv M$ к невязке также требует обмена граничными условиями для невязки. Поскольку задача
+для невязки имеет однородные граничные условия, то этот обмен сводится к заполнению нулями слоя фиктивных ячеек.
+После модификации локальных невязок к ним применяются операторы $\matinv M_i = \matinv A_i$.
+
+
+
+\subsubsection{Задание для самостоятельной работы}
+\clisting{open}{"test/poisson_fvm_solve_test.cpp"}
+
+В файле \ename{poisson_fvm_solve_test.cpp}
+написаны тесты \cvar{[poisson-fvm-fpi]} и \cvar{[poisson-fvm-bicgstab]},
+реализующие простой \cref{eq:schwarz_simple_it} и BiCGStab \cref{eq:schwarz_bicgstab} итерационные процессы с предобуславливанием
+в общем виде.
+Целевой оператор ($\mat A$ в обозначениях \cref{eq:schwarz_full_oper}), дополненный предобуславливателем представлен интерфейсом вида
+\clisting{block}{"class IProblemWithPrecond"}
+с методами
+\begin{itemize}
+\item \cvar{size} -- матричная размерность,
+\item \cvar{A} -- применить оператор $\mat A$ к сеточной функции,
+\item \cvar{residual} -- подсчитать невязку для заданного решения,
+\item \cvar{Minv_res} -- применить обратный к предобуславливателю оператор к невязке.
+\end{itemize}
+Первые три метода -- свойства оператора $\mat A$, последний -- свойство предобуславливателя $\matinv{M}$.
+Представлено три реализации этого интерфейса для двумерной задачи Пуассона \cref{eq:schwarz_pois}:
+\begin{itemize}
+\item \cvar{PoissonWithPrecond_Constant} -- константный скалярный множитель,
+\item \cvar{PoissonWithPrecond_Jacobi} -- предобуславливатель Якоби (диагональ от $\mat A$),
+\item \cvar{PoissonWithPrecond_Seidel} -- предобуславливатель Зейделя (нижняя треугольная от $\mat A$,
+\item \cvar{PoissonWithPrecond_DDM} -- DDM предобуславливатель.
+\end{itemize}
+Последний содержит в себе массив локальных задач \cvar{PoissonWithPrecond_LocalDDM}, 
+также подчитняющихся этому интерфейсу.
+Это отражает блочную природу DDM решателя: для вычисления глобальной функции от глобального вектора (например, \cvar{PoissonWithPrecond_DDM::A(x)})
+нужно
+\begin{enumerate}
+\item разделить глобальный вектор аргумент на локальные вектора (или применить операторы сужения $\mat R_i$). Это делается методом
+\cvar{PoissonWithPrecond_LocalDDM::restrict_to_local}.
+\item для каждого локального вектора решить локальные задачи. То есть вызвать целевой оператор от локальных задач (например, \cvar{PoissonWithPrecond_LocalDDM::A(x_i)})
+\item сравить локальные решения (то есть примерить оператор расширения со взвешиванием $\mat R_i^T \mat D_i$. Это делается методом
+\cvar{PoissonWithPrecond_DDM::reduce_to_global}.
+\end{enumerate}
+
+
+
+\subsubsubsection{Необходимо}
+\label{sec:schwarz2_todo}
+\begin{enumerate}
+\item В обозначенные тесты \cvar{[poisson-fvm-fpi]}, \cvar{[poisson-fvm-bicgstab]} добавить механизм сохранения решения на слое (например, по аналогии с тестом \cvar{[poisson-fvm-ddm]})
+\item Для достаточно подробной (более 10 тысяч ячеек) неструктурированной tetra-сетки нарисовать картины сходимости решения с использованием простой итерации с DDM предобуславливателем.
+      Сравнить с аналогичными картинками из теста \cvar{[poisson-fvm-ddm]} с использованием разбиения $3\times3$ (не забыть переделать последний алгоритм под параллельную реализацию).
+      Убедится в идентичности этих методов (тут не стоит ожидать идеального совпадения, так как у алгоритмов реализованы разные способы вычисления невязки).
+\item аналогично провести сравнение всех представленных в тестах методов (как с простой итерацией, так и с bicgstab). По итогам нарисовать кривые сходимости.
+\item изучить поведение алгоритмов \cvar{fixed_point_iteration} и \cvar{bicgstab} с предобуславливателем DDM с увеличением буферной зоны. Сравнить кривые сходимости.
+\item алгоритм \cvar{bicgstab} написан в общих формулировках следуя шагам из п.~\ref{sec:schwarz_bicgstab}. Он никак не учитывает особенности DDM.
+      Как итог, все промежуточные вектора храняться глобально, что требует глобальной редукции на каждом шаге алгоритма. Нужно написать альтернативный метод, оптимизированный на работу только
+      с DDM-предобуславливателем:
+\begin{cppcode}
+std::vector<double> bicgstab2(
+        std::shared_ptr<PoissonWithPrecond_DDM> prob,
+        size_t max_it){
+    //...
+}
+\end{cppcode}
+\item При программировании \cvar{bicgstab2} рассмотреть два способа вычисления скалярного произведения двух локально заданных векторов:
+      \begin{itemize}
+      \item точный: сначала делается редукция \cvar{reduce_to_global} входных локальных векторов для сборки глобальных, потом считается скалярное произведение двух глобальных векторов;
+      \item приближённый: сначала собираются взвешенные локальные скалярные произведения, потом подсчитывается их сумма.
+            \begin{equation*}
+            u^T \cdot v \approx \sum_i \sum_j \Chi_i[j] \cdot u_i[j] \cdot v_i[j].
+            \end{equation*}
+            здесь $i$ -- индекс домена, $j$ -- индекс ячейки в домене.
+      \end{itemize}
+      Сравнить кривые сходимости для исходной \cvar{bicgstab} и \cvar{bicgstab2} с двумя способоми вычисления скалярного произведения.
+\end{enumerate}
+
+
+\subsubsubsection{Рекомендации к программированию}
+Для написания метода \cvar{bicgstab2}
+\begin{itemize}
+
+\item При реализации \cvar{bicgstab2} нужно все промежуточные векторы задать как массив локальных векторов для каждого домена:
+\begin{cppcode}
+const std::vector<PoissonWithPrecond_LocalDDM>& subprobs = prob->subproblems();
+std::vector<std::vector<double>> r_prime, r_tilde, p_prime, v_prime;
+for (size_t idom=0; idom < subprobs.size(); ++idom){
+	std::vector<double> local_x = subprobs[idom].restrict_to_local(x);
+	std::vector<double> r = subprobs[idom].residual(local_x);
+
+	r_prime.push_back(subprobs[idom].Minv_res(r));
+	r_tilde.push_back(r_prime.back());
+	p_prime.emplace_back(r.size(), 0.0);
+	v_prime.emplace_back(r.size(), 0.0);
+}
+\end{cppcode}
+
+\item Метод скалярного произведения также должен использовать в качестве входа локальные векторы (см. последний пункт из списка п.~\ref{sec:schwarz2_todo}):
+\begin{cppcode}
+auto scalar_product = [&](
+	const std::vector<std::vector<double>>& u,
+	const std::vector<std::vector<double>>& v)->double{
+    // ...
+}
+\end{cppcode}
+
+\item Работать с операторами объекта с исходной задачей \cvar{prob} не нужно.
+Вместо этого нужно в цикле вызывать теже самые операторы из локальных задач. Например на шаге 4, вместо
+\begin{cppcode}
+v_prime = prob->Minv_res(prob->A(p_prime));
+\end{cppcode}
+следует написать в цикле
+\begin{cppcode}
+for (size_t idom = 0; idom < subprobs.size(); ++idom){
+	v_prime[idom] = subprobs[idom].Minv_res(subprobs[idom].A(p_prime[idom]));
+}
+\end{cppcode}
+
+\item Как отмечалось ранее, применение общего оператора $\mat A$ к локально заданному вектору $u$
+равносильно применению локально заданных операторов $\mat A_i$ к локально заданным векторам $u_i$
+после обмена граничными условиями (то есть заполнения слоёв ghost ячеек) между этими векторами.
+Эта операция реализована в методе \cvar{PoissonWithPrecond_DDM::exchange_bc}.
+Оператор $\mat A$ применяется к векторам $p'$ и $s'$. После вычисления они должны быть обработаны этой процедурой.
+
+\item При применении поправки к глобальному решению \cvar{x} на шаге 9 следует учесть взвешивание и преобразовать индексы узла из локального в глобальный:
+\begin{cppcode}
+for (size_t idom=0; idom < subprobs.size(); ++idom){
+	for (size_t i=0; i<subprobs[idom].size(); ++i){
+		double d = alpha * p_prime[idom][i] + omega * s_prime[idom][i];
+		size_t global_i = subprobs[idom].global_colloc(i);
+		x[global_i] += subprobs[idom].Xi()[i] * d;
+	}
+}
+\end{cppcode}
+
+\item На шаге 10 также вызов нормы невязки, который также можно оптимизировать, убрав последнее преобразование в глобальный вектор в методе \cvar{residual},
+вместо этого посчитав нормы локальных невязок и взяв максимум из них.
+
+\item При применении точной формулы для скалярного произведения метод \cvar{bicgstab2} должен быть идентичен исходному методу \cvar{bicgstab}.
+Это можно использовать при отладке, сравнивая промежуточные вектора, полученные разными методами.
+
+\end{itemize}

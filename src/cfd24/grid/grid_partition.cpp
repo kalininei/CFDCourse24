@@ -279,9 +279,10 @@ GridPartition  GridPartition::build_uniform(
 	double y1 = std::max_element(points.begin(), points.end(), [](Point a, Point b){ return a.y() < b.y(); })->y();
 	double z1 = std::max_element(points.begin(), points.end(), [](Point a, Point b){ return a.z() < b.z(); })->z();
 
-	double hx = (x1 - x0) / nx;
-	double hy = (y1 - y0) / ny;
-	double hz = (z1 - z0) / nz;
+	double hx=1, hy=1, hz=1;
+	if constexpr (NDim > 0) hx = (x1 - x0) / nx;
+	if constexpr (NDim > 1) hy = (y1 - y0) / ny;
+	if constexpr (NDim > 2) hz = (z1 - z0) / nz;
 
 	auto location_func = [x0, y0, z0, nx, ny, nz, hx, hy, hz](Point p) -> int{
 		size_t ix = std::min(size_t((p.x() - x0)/hx), nx-1);

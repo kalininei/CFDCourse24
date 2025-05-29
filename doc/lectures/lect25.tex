@@ -20,6 +20,7 @@
 
 
 \subsubsection{Domain Decomposition Method. Метод Шварца}
+\label{sec:ddm_schwarz}
 
 \begin{figure}[h!]
 \centering
@@ -28,12 +29,23 @@
 \label{fig:scwarz_domain}
 \end{figure}
 
+Рассмотрим задачу Пуассона с граничными условиями первого рода в области $\Omega$:
+\begin{equation}
+\label{eq:schwarz_pois}
+\begin{cases}
+-\nabla^2 u = f, \quad &x\in\Omega, \\
+u = b.c., \quad & x\in\partial\Omega.
+\end{cases}
+\end{equation}
+
+Разобъём область $\Omega$ на несколько перекрывающихся доменов $\Omega_i$ (рис.~\ref{fig:schwarz_domain}).
+Будем решать только локальные задачи в доменах, а общее решение будем собирать как комбинацию локальных.
 Постановка задачи на итерации Шварца $n+1$ для $i$-го домена имеет вид
 \begin{equation}
 \begin{cases}
 \label{eq:schwarz_iprob}
 -\nabla^2 u_i^{n+1} = f, \qquad &x\in\Omega_i,  \\
-u_i^{n+1} = b, \qquad &x\in\partial\Omega \cap \partial\Omega_i, \\
+u_i^{n+1} = b.c., \qquad &x\in\partial\Omega \cap \partial\Omega_i, \\
 u_i^{n+1} = u^n, \qquad &x\in\partial\Omega_i \cap \Omega_j.
 \end{cases}
 \end{equation}
@@ -64,6 +76,21 @@ $\Chi_i$ -- ограничивающий весовой коэффициент, 
 получим параллельный алгоритм.
 Можно провести аналогию с итерационными алгоритмами решения систем линейных уравнений:\
 последовательный алгоритм соответствуюет методу Зейделя, а параллельный -- методу Якоби. 
+
+Задача \cref{eq:schwarz_iprob} может быть переформулирована в теримнах
+поправки и невязки (с учётом того, что начальное решение $u^0$ удовлетворяет граничным условиям на $\partial\Omega$):
+\begin{equation}
+\begin{cases}
+\label{eq:schwarz_rprob}
+-\nabla^2 \delta_i^{n+1} = r^{n}, \qquad &x\in\Omega_i,  \\
+\delta_i^{n+1} = 0, \qquad &x\in\partial\Omega_i
+\end{cases}
+\end{equation}
+После вычисления поправки глобальное решение на новой итерации считается как
+\begin{align*}
+&\delta^{n+1} = \sum_i E_i\left(\Chi_i \, \delta_i^{n+1}\right), \\
+&u^{n+1} = u^{n} + \delta^{n+1}
+\end{align*}
 
 \subsubsubsection{Построение сетки для конечнообъёмного DDM-метода}
 \label{sec:schwarz_fem_grid}
@@ -185,12 +212,29 @@ mpirun -H localhost:8 mpi_cfd24_test
 \item Подключить два компьютера с одинаковой операционной системой к одной локальной сети. Например, к одной сети WiFi
 \item Узнать локальные адреса этих компьютеров в этой сети
 \item Обеспечить ssh доступ с основного комьютера на все остальные без пароля (по ssh ключу) и с дефолтным пользователем.
-      С основного компьютера ssh подключение должно создаваться по (вместо 192.168.1.2 подставить адрес второго компьютера)
+      С основного компьютера ssh подключение должно создаваться по (вместо 192.168.1.2 подставить адрес второго компьютера).
 \begin{bashcode}
 ssh 192.168.1.2
 \end{bashcode}
+На системе Windows для этого нужно дать папке \ename{C:/Users/<user_name>/.ssh}
+и находящемуся в ней файлу \ename{authorized_keys} дать права на чтение, запись и выполнение только для
+\ename{<user name>} и\ename{СИСТЕМА}.
+Кроме того нужно закомментировать две последние строчки в файле \ename{ssh_config}:
+\begin{bashcode}
+# Match Group administrators
+#       AuthorizedKeysFile __PROGRAMDATA__/ssh/administrators_authorized_keys
+\end{bashcode}
+Если не получится входить без указания имени пользователя, надо на основном компе (из которого будете подключаться)
+сделать файл \ename{C:/Users/<user>/.ssh/config} и в нём
+\begin{bashcode}
+Host 192.168.31.208
+    User <user name>               # ваш пользователь
+    IdentityFile ~/.ssh/id_ed25519 # Укажите свой приватный ключ
+\end{bashcode}
+Права на этот файл такие же, как и на \ename{authorized_keys}.
 
 \item Положить скомпилированную программу \cvar{mpi_cfd24_test} в одно и тоже место на этих компьютерах. Рядом положить целевую сетку
+\item Убедитесь, что на каждом из компьютеров программа запускается локально (например с флагом \ename{-n 4}).
 \item Для запуска на 4-х потоках (по два на компьютер) нужно на основном компьютере запустить (заменить \ename{192.168.1.2} на адрес второго компьютера, \ename{/home/user/...} на полный путь к программе).
 \begin{bashcode}
 mpirun -H localhost:2,192.168.1.2:2 /home/user/mpitest/mpi_cfd24_test

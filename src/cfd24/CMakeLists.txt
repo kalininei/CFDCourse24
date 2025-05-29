@@ -40,6 +40,7 @@ set (SRC
 	debug/printer.cpp
 	debug/saver.cpp
 	debug/tictoc.cpp
+	debug/nan_signal_handler.cpp
 )
 
 set (HEADERS
